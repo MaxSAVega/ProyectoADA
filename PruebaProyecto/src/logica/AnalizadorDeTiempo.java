@@ -1,82 +1,60 @@
-
 package logica;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 public class AnalizadorDeTiempo {
-
-    // Método que analiza el código fuente y estima su tiempo de ejecución
+    
     public double calcularTiempoEjecucion(String codigoFuente) {
-        // En una implementación real, deberías ejecutar el código y medir el tiempo.
-        // Aquí solo simularemos el tiempo de ejecución basándonos en la complejidad.
-        
-        String funcionTiempo = obtenerFuncionTiempoEquivalente(codigoFuente);
-        
-        // Simulación de tiempo de ejecución en ms basado en la complejidad teórica
-        switch (funcionTiempo) {
-            case "O(1)":
-                return 1;
-            case "O(n)":
-                return 10;
-            case "O(n^2)":
-                return 100;
-            case "O(log n)":
-                return 5;
-            case "O(n log n)":
-                return 50;
-            default:
-                return 0; // No detectado
-        }
+        // Implementa aquí la lógica para medir el tiempo de ejecución del algoritmo.
+        // Este es un valor de ejemplo, el cálculo real dependerá del análisis.
+        return 10.0;
     }
 
-    // Método que analiza el código y determina su complejidad temporal teórica
     public String obtenerFuncionTiempoEquivalente(String codigoFuente) {
-        // Verifica si el código tiene un bucle simple, doble o logarítmico
-        if (contieneBucleDoble(codigoFuente)) {
-            return "O(n^2)";
-        } else if (contieneBucleSimple(codigoFuente)) {
-            return "O(n)";
-        } else if (contieneLogaritmico(codigoFuente)) {
+        // Analiza el código fuente para determinar la complejidad temporal.
+        if (esBucleLogaritmico(codigoFuente)) {
             return "O(log n)";
-        } else if (contieneBucleYSorteo(codigoFuente)) {
-            return "O(n log n)";
+        } else if (esBucleAnidado(codigoFuente)) {
+            return "O(n^2)";
+        } else if (esBucleSimple(codigoFuente)) {
+            return "O(n)";
         } else {
-            return "O(1)"; // Caso de operación constante
+            return "O(1)";
         }
     }
-
-    // Método para comparar con otras funciones de tiempo
+    
     public String compararConFunciones(String funcionTiempo) {
-        // Comparación básica con otras funciones comunes
+        // Comparación de la función de tiempo con otras funciones
         return "Comparación realizada: " + funcionTiempo + " vs O(1), O(log n), O(n), O(n^2), O(n log n)";
     }
 
-    // Métodos de detección de patrones para diferentes complejidades
-
-    private boolean contieneBucleSimple(String codigo) {
-        Pattern patron = Pattern.compile("\\b(for|while)\\s*\\(.*n.*\\)");
-        Matcher matcher = patron.matcher(codigo);
-        return matcher.find();
+    private boolean esBucleLogaritmico(String codigoFuente) {
+        // Verifica si el código fuente contiene un bucle que divide el rango de búsqueda, lo que indica O(log n).
+        return codigoFuente.contains("start") && codigoFuente.contains("end") && 
+               (codigoFuente.contains("while") || codigoFuente.contains("for")) &&
+               (codigoFuente.contains("start = middle + 1") || codigoFuente.contains("end = middle - 1"));
     }
 
-    private boolean contieneBucleDoble(String codigo) {
-        Pattern patron = Pattern.compile("\\b(for|while)\\s*\\(.*n.*\\).*\\b(for|while)\\s*\\(.*n.*\\)");
-        Matcher matcher = patron.matcher(codigo);
-        return matcher.find();
+    private boolean esBucleAnidado(String codigoFuente) {
+        // Verifica si el código tiene bucles anidados para identificar O(n^2)
+        int buclesEncontrados = contarOcurrencias(codigoFuente, "for") + contarOcurrencias(codigoFuente, "while");
+        return buclesEncontrados > 1;
     }
 
-    private boolean contieneLogaritmico(String codigo) {
-        Pattern patron = Pattern.compile("\\b(for|while)\\s*\\(.*n.*(/|\\*).*2.*\\)");
-        Matcher matcher = patron.matcher(codigo);
-        return matcher.find();
+    private boolean esBucleSimple(String codigoFuente) {
+        // Verifica si el código tiene un solo bucle
+        int buclesEncontrados = contarOcurrencias(codigoFuente, "for") + contarOcurrencias(codigoFuente, "while");
+        return buclesEncontrados == 1;
     }
 
-    private boolean contieneBucleYSorteo(String codigo) {
-        return contieneBucleSimple(codigo) && codigo.contains("sort");
+    private int contarOcurrencias(String texto, String subcadena) {
+        int index = 0, count = 0;
+        while ((index = texto.indexOf(subcadena, index)) != -1) {
+            count++;
+            index += subcadena.length();
+        }
+        return count;
     }
-    
-    
 }
+
+
 
 

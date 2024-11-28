@@ -3,6 +3,8 @@ package grafico;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.*;
+import java.util.List;
 import logica.AnalizadorDeTiempo;
 
 public class VentanaPrincipal extends JFrame {
@@ -10,7 +12,7 @@ public class VentanaPrincipal extends JFrame {
     private JTable tablaComplejidad;
     private JScrollPane scrollTabla;
     private JTextArea codigoFuenteArea;
-    private JButton botonAnalizar, botonLimpiar, botonExportar;
+    private JButton botonAnalizar, botonLimpiar;
     private AnalizadorDeTiempo analizador;
 
     public VentanaPrincipal() {
@@ -37,19 +39,14 @@ public class VentanaPrincipal extends JFrame {
         JScrollPane scrollCodigo = new JScrollPane(codigoFuenteArea);
         panelCodigo.add(scrollCodigo, BorderLayout.CENTER);
 
-        // Panel para botones
-        JPanel panelBotones = new JPanel();
+        // Botón Analizar
         botonAnalizar = new JButton("Analizar");
-        botonLimpiar = new JButton("Limpiar");
-        botonExportar = new JButton("Exportar Resultados");
-        
         botonAnalizar.addActionListener(e -> analizarCodigo());
+        botonLimpiar = new JButton("Limpiar");
         botonLimpiar.addActionListener(e -> limpiarCodigo());
-        botonExportar.addActionListener(e -> exportarResultados());
-
+        JPanel panelBotones = new JPanel();
         panelBotones.add(botonAnalizar);
         panelBotones.add(botonLimpiar);
-        panelBotones.add(botonExportar);
         panelCodigo.add(panelBotones, BorderLayout.SOUTH);
 
         // Panel para mostrar resultados
@@ -74,55 +71,85 @@ public class VentanaPrincipal extends JFrame {
             return;
         }
 
-        String complejidad = analizador.obtenerFuncionTiempoEquivalente(codigoFuente);
-        mostrarResultados(codigoFuente, complejidad);
+        List<String[]> resultados = analizarLineas(codigoFuente);
+        mostrarResultados(resultados);
+        calcularComplejidadTotal(resultados);
     }
 
-    private void mostrarResultados(String codigoFuente, String complejidad) {
-        String[] columnas = {"Aspecto", "Resultado"};
-        String[][] datos = {
-            {"Complejidad estimada", complejidad},
-            {"Tamaño del código", String.valueOf(codigoFuente.length())},
-            {"Detalle de comparación", analizador.compararConFunciones(complejidad)}
-        };
+    private List<String[]> analizarLineas(String codigoFuente) {
+        String[] lineas = codigoFuente.split("\n");
+        List<String[]> resultados = new ArrayList<>();
 
-        DefaultTableModel model = new DefaultTableModel(datos, columnas);
-        tablaComplejidad.setModel(model);
-
-        // Resaltar fila según la complejidad
-        if (complejidad.contains("O(n^2)") || complejidad.contains("O(2^n)")) {
-            tablaComplejidad.setBackground(new Color(255, 204, 204)); // Rojo claro
-        } else if (complejidad.contains("O(log n)") || complejidad.contains("O(n log n)")) {
-            tablaComplejidad.setBackground(new Color(255, 255, 204)); // Amarillo claro
-        } else if (complejidad.contains("O(1)")) {
-            tablaComplejidad.setBackground(new Color(204, 255, 204)); // Verde claro
-        } else {
-            tablaComplejidad.setBackground(Color.WHITE); // Fondo por defecto
+        for (String linea : lineas) {
+            String complejidad = determinarComplejidad(linea.trim());
+            resultados.add(new String[]{linea.trim(), complejidad});
         }
+
+        return resultados;
+    }
+
+    private String determinarComplejidad(String linea) {
+        if (linea.startsWith("let ") || linea.startsWith("var ") || linea.startsWith("const ")) {
+            return "O(1)"; // Declaración de variable
+        } else if (linea.startsWith("if") || linea.startsWith("switch")) {
+            return "O(1)"; // Condicional simple
+        } else if (linea.startsWith("for") || linea.startsWith("while")) {
+            if (linea.contains("for")) {
+                if (linea.contains("nested")) {
+                    return "O(n^2)"; // Ejemplo de bucle anidado
+                }
+                return "O(n)"; // Bucle simple
+            } else if (linea.contains("while")) {
+                return "O(n)"; // Asumiendo una condición lineal
+            }
+        }
+        return "No determinada"; // No se puede identificar
+    }
+
+    private void mostrarResultados(List<String[]> resultados) {
+        String[] columnas = {"Línea de Código", "Complejidad Estimada"};
+        DefaultTableModel model = new DefaultTableModel(columnas, 0);
+
+        for (String[] resultado : resultados) {
+            model.addRow(resultado);
+        }
+
+        tablaComplejidad.setModel(model);
+    }
+
+    private void calcularComplejidadTotal(List<String[]> resultados) {
+        Map<String, Integer> complejidades = new HashMap<>();
+        for (String[] resultado : resultados) {
+            String complejidad = resultado[1];
+            if (complejidad.startsWith("O")) {
+                complejidades.put(complejidad, complejidades.getOrDefault(complejidad, 0) + 1);
+            }
+        }
+
+        StringBuilder resultadoFinal = new StringBuilder("Complejidad Total:\n");
+        for (Map.Entry<String, Integer> entry : complejidades.entrySet()) {
+            resultadoFinal.append(entry.getValue()).append("x").append(entry.getKey()).append(" + ");
+        }
+
+        String resultadoSimplificado = simplificarComplejidad(complejidades);
+        JOptionPane.showMessageDialog(this, resultadoFinal.substring(0, resultadoFinal.length() - 3)
+                + "\nSimplificado: " + resultadoSimplificado, "Complejidad Total", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private String simplificarComplejidad(Map<String, Integer> complejidades) {
+        if (complejidades.containsKey("O(n^2)")) {
+            return "O(n^2)";
+        } else if (complejidades.containsKey("O(n)")) {
+            return "O(n)";
+        } else if (complejidades.containsKey("O(1)")) {
+            return "O(1)";
+        }
+        return "No determinada";
     }
 
     private void limpiarCodigo() {
         codigoFuenteArea.setText("");
         tablaComplejidad.setModel(new DefaultTableModel());
-    }
-
-    private void exportarResultados() {
-        try {
-            String resultados = "Resultados del Análisis de Complejidad:\n";
-            for (int i = 0; i < tablaComplejidad.getRowCount(); i++) {
-                resultados += tablaComplejidad.getValueAt(i, 0) + ": " + tablaComplejidad.getValueAt(i, 1) + "\n";
-            }
-
-            JFileChooser fileChooser = new JFileChooser();
-            int seleccion = fileChooser.showSaveDialog(this);
-            if (seleccion == JFileChooser.APPROVE_OPTION) {
-                java.io.File archivo = fileChooser.getSelectedFile();
-                java.nio.file.Files.write(archivo.toPath(), resultados.getBytes());
-                JOptionPane.showMessageDialog(this, "Resultados exportados correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            }
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error al exportar resultados: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
     }
 
     public static void main(String[] args) {
@@ -132,5 +159,7 @@ public class VentanaPrincipal extends JFrame {
         });
     }
 }
+
+
 
 

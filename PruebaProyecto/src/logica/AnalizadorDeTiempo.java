@@ -9,40 +9,52 @@ public class AnalizadorDeTiempo {
     }
 
     public String obtenerFuncionTiempoEquivalente(String codigoFuente) {
-        // Analiza el código fuente para determinar la complejidad temporal.
-        if (esBucleLogaritmico(codigoFuente)) {
+        if (esRecursivo(codigoFuente)) {
+            return analizarRecursion(codigoFuente);
+        } else if (esBucleLogaritmico(codigoFuente)) {
             return "O(log n)";
         } else if (esBucleAnidado(codigoFuente)) {
             return "O(n^2)";
-        } else if (esBucleSimple(codigoFuente)) {
+        } else if (esBucleSimpleAvanzado(codigoFuente)) {
             return "O(n)";
         } else {
-            return "O(1)";
+            return "Complejidad no determinada, se requiere análisis manual.";
         }
     }
     
     public String compararConFunciones(String funcionTiempo) {
-        // Comparación de la función de tiempo con otras funciones
         return "Comparación realizada: " + funcionTiempo + " vs O(1), O(log n), O(n), O(n^2), O(n log n)";
     }
 
+    private boolean esRecursivo(String codigoFuente) {
+        return codigoFuente.contains("return") && codigoFuente.contains("(") && codigoFuente.contains(")");
+    }
+
+    private String analizarRecursion(String codigoFuente) {
+        if (codigoFuente.contains("T(n/2)")) {
+            return "O(log n)";
+        } else if (codigoFuente.contains("T(n-1)")) {
+            return "O(n)";
+        } else if (codigoFuente.contains("T(n)")) {
+            return "O(2^n)";
+        }
+        return "Indeterminado";
+    }
+
     private boolean esBucleLogaritmico(String codigoFuente) {
-        // Verifica si el código fuente contiene un bucle que divide el rango de búsqueda, lo que indica O(log n).
         return codigoFuente.contains("start") && codigoFuente.contains("end") && 
                (codigoFuente.contains("while") || codigoFuente.contains("for")) &&
                (codigoFuente.contains("start = middle + 1") || codigoFuente.contains("end = middle - 1"));
     }
 
     private boolean esBucleAnidado(String codigoFuente) {
-        // Verifica si el código tiene bucles anidados para identificar O(n^2)
         int buclesEncontrados = contarOcurrencias(codigoFuente, "for") + contarOcurrencias(codigoFuente, "while");
         return buclesEncontrados > 1;
     }
 
-    private boolean esBucleSimple(String codigoFuente) {
-        // Verifica si el código tiene un solo bucle
-        int buclesEncontrados = contarOcurrencias(codigoFuente, "for") + contarOcurrencias(codigoFuente, "while");
-        return buclesEncontrados == 1;
+    private boolean esBucleSimpleAvanzado(String codigoFuente) {
+        String regex = "for\\s*\\(.*;.*;.*\\)|while\\s*\\(.*\\)";
+        return codigoFuente.matches(regex);
     }
 
     private int contarOcurrencias(String texto, String subcadena) {
@@ -54,6 +66,7 @@ public class AnalizadorDeTiempo {
         return count;
     }
 }
+
 
 
 

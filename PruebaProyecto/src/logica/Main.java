@@ -1,4 +1,3 @@
-
 package logica;
 
 import grafico.VentanaPrincipal;
@@ -9,5 +8,3 @@ public class Main {
         ventana.setVisible(true);
     }
 }
-
-

@@ -12,7 +12,7 @@ public class VentanaPrincipal extends JFrame {
     private JTable tablaComplejidad;
     private JScrollPane scrollTabla;
     private JTextArea codigoFuenteArea;
-    private JButton botonAnalizar, botonLimpiar;
+    private JButton botonAnalizar, botonLimpiar, botonAyuda, botonConfiguracion;
     private AnalizadorDeTiempo analizador;
 
     public VentanaPrincipal() {
@@ -39,16 +39,26 @@ public class VentanaPrincipal extends JFrame {
         JScrollPane scrollCodigo = new JScrollPane(codigoFuenteArea);
         panelCodigo.add(scrollCodigo, BorderLayout.CENTER);
 
-        // Botón Analizar
+        // Botones
         botonAnalizar = new JButton("Analizar");
         botonAnalizar.addActionListener(e -> analizarCodigo());
         botonLimpiar = new JButton("Limpiar");
         botonLimpiar.addActionListener(e -> limpiarCodigo());
+        
+ // Botones para abrir ayuda y configuración
+        botonAyuda = new JButton("Ayuda");
+        botonAyuda.addActionListener(e -> abrirAyuda());
+        
+        botonConfiguracion = new JButton("Configuración");
+        botonConfiguracion.addActionListener(e -> abrirConfiguracion());
+
         JPanel panelBotones = new JPanel();
         panelBotones.add(botonAnalizar);
         panelBotones.add(botonLimpiar);
+        panelBotones.add(botonAyuda);
+        panelBotones.add(botonConfiguracion);
         panelCodigo.add(panelBotones, BorderLayout.SOUTH);
-
+        
         // Panel para mostrar resultados
         JPanel panelResultados = new JPanel(new BorderLayout());
         panelResultados.setBorder(BorderFactory.createTitledBorder("Resultados"));
@@ -62,6 +72,16 @@ public class VentanaPrincipal extends JFrame {
 
         // Agregar divisor a la ventana principal
         add(panelDividido, BorderLayout.CENTER);
+    }
+    
+     private void abrirAyuda() {
+        HelpFrame helpFrame = new HelpFrame();
+        helpFrame.setVisible(true);
+    }
+
+    private void abrirConfiguracion() {
+        SettingsFrame settingsFrame = new SettingsFrame();
+        settingsFrame.setVisible(true);
     }
 
     private void analizarCodigo() {

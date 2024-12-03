@@ -3,15 +3,16 @@ package grafico;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import logica.Configuracion;
 
 public class SettingsFrame extends JFrame {
 
     private JTextField inputSizeField;
     private JComboBox<String> complexityOptions;
-
-    public SettingsFrame() {
+    private Configuracion configuracion;
+    
+    public SettingsFrame(Configuracion configuracion) {
+        this.configuracion = configuracion;
         setTitle("Configuración");
         setSize(400, 200);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -23,20 +24,17 @@ public class SettingsFrame extends JFrame {
 
         // Etiqueta y campo de tamaño de entrada
         JLabel inputSizeLabel = new JLabel("Tamaño de Entrada (n):");
-        inputSizeField = new JTextField();
+        inputSizeField = new JTextField(String.valueOf(configuracion.getTamanioEntrada()));
+
         
         // Etiqueta y opciones de complejidad
         JLabel complexityLabel = new JLabel("Algoritmo de Comparación:");
         complexityOptions = new JComboBox<>(new String[] { "O(1)", "O(log n)", "O(n)", "O(n log n)", "O(n^2)" });
-
+        complexityOptions.setSelectedItem(configuracion.getComplejidadReferencia());
+        
         // Botón para guardar la configuración
         JButton saveButton = new JButton("Guardar Configuración");
-        saveButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                saveSettings();
-            }
-        });
+        saveButton.addActionListener(e -> saveSettings());
 
         // Agregar componentes al panel
         panel.add(inputSizeLabel);
@@ -50,16 +48,16 @@ public class SettingsFrame extends JFrame {
     }
 
     private void saveSettings() {
-        String inputSize = inputSizeField.getText();
-        String complexity = (String) complexityOptions.getSelectedItem();
-        JOptionPane.showMessageDialog(this, "Configuración guardada:\nTamaño de Entrada: " + inputSize + "\nComplejidad: " + complexity);
+        try {
+            int tamanioEntrada = Integer.parseInt(inputSizeField.getText());
+            configuracion.setTamanioEntrada(tamanioEntrada);
+            configuracion.setComplejidadReferencia((String) complexityOptions.getSelectedItem());
+            JOptionPane.showMessageDialog(this, "Configuración guardada correctamente.");
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Por favor, ingresa un tamaño de entrada válido.", "Error", JOptionPane.WARNING_MESSAGE);
+        }
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            SettingsFrame settingsFrame = new SettingsFrame();
-            settingsFrame.setVisible(true);
-        });
-    }
+    
 }
 

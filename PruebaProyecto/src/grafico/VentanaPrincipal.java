@@ -6,6 +6,7 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 import logica.AnalizadorDeTiempo;
+import logica.Configuracion;
 
 public class VentanaPrincipal extends JFrame {
 
@@ -14,9 +15,13 @@ public class VentanaPrincipal extends JFrame {
     private JTextArea codigoFuenteArea;
     private JButton botonAnalizar, botonLimpiar, botonAyuda, botonConfiguracion;
     private AnalizadorDeTiempo analizador;
-
+    private Configuracion configuracion;
+    
     public VentanaPrincipal() {
         analizador = new AnalizadorDeTiempo();
+        configuracion = new Configuracion(); // Inicializa con valores predeterminados
+        configuracion.setTamanioEntrada(10);
+        configuracion.setComplejidadReferencia("O(n)");
         initUI();
     }
 
@@ -44,6 +49,9 @@ public class VentanaPrincipal extends JFrame {
         botonAnalizar.addActionListener(e -> analizarCodigo());
         botonLimpiar = new JButton("Limpiar");
         botonLimpiar.addActionListener(e -> limpiarCodigo());
+        
+        JButton botonConfiguracion = new JButton("Configuración");
+        botonConfiguracion.addActionListener(e -> abrirConfiguracion());
         
  // Botones para abrir ayuda y configuración
         botonAyuda = new JButton("Ayuda");
@@ -80,35 +88,43 @@ public class VentanaPrincipal extends JFrame {
     }
 
     private void abrirConfiguracion() {
-        SettingsFrame settingsFrame = new SettingsFrame();
+        SettingsFrame settingsFrame = new SettingsFrame(configuracion);
         settingsFrame.setVisible(true);
     }
 
     private void analizarCodigo() {
-        String codigoFuente = codigoFuenteArea.getText();
-        if (codigoFuente.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Por favor, ingresa un código fuente para analizar.", "Error", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        List<String[]> resultados = analizarLineas(codigoFuente);
-        mostrarResultados(resultados);
-        calcularComplejidadTotal(resultados);
+    int tamanioEntrada = configuracion.getTamanioEntrada();
+    String complejidadReferencia = configuracion.getComplejidadReferencia();
+    
+    String codigoFuente = codigoFuenteArea.getText();
+    if (codigoFuente.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Por favor, ingresa un código fuente para analizar.", "Error", JOptionPane.WARNING_MESSAGE);
+        return;
     }
 
-    private List<String[]> analizarLineas(String codigoFuente) {
-        String[] lineas = codigoFuente.split("\n");
-        List<String[]> resultados = new ArrayList<>();
+    // Analizar líneas de código
+    List<String[]> resultados = analizarLineas(codigoFuente, tamanioEntrada);
 
-        for (String linea : lineas) {
-            String complejidad = determinarComplejidad(linea.trim());
-            resultados.add(new String[]{linea.trim(), complejidad});
-        }
+    // Mostrar resultados en la tabla
+    mostrarResultados(resultados);
 
-        return resultados;
+    // Calcular y mostrar la complejidad total con base en la referencia
+    calcularComplejidadTotal(resultados, complejidadReferencia);
+}
+
+    private List<String[]> analizarLineas(String codigoFuente, int tamanioEntrada) {
+    String[] lineas = codigoFuente.split("\n");
+    List<String[]> resultados = new ArrayList<>();
+
+    for (String linea : lineas) {
+        String complejidad = determinarComplejidad(linea.trim(), tamanioEntrada);
+        resultados.add(new String[]{linea.trim(), complejidad});
     }
 
-    private String determinarComplejidad(String linea) {
+    return resultados;
+}
+
+    private String determinarComplejidad(String linea, int tamanioEntrada) {
     if (linea.startsWith("let ") || linea.startsWith("var ") || linea.startsWith("const ")) {
         return "O(1)"; // Declaración de variable
     } else if (linea.startsWith("if") || linea.startsWith("switch")) {
@@ -117,7 +133,8 @@ public class VentanaPrincipal extends JFrame {
         if (analizador.esBucleAnidado(codigoFuenteArea.getText())) {
             return "O(n^2)"; // Bucle anidado
         }
-        return "O(n)"; // Bucle simple
+        // Ajustar con base en el tamaño de entrada
+        return tamanioEntrada > 1000 ? "O(n log n)" : "O(n)"; 
     }
     return "No determinada"; // No se puede identificar
 }
@@ -134,24 +151,32 @@ public class VentanaPrincipal extends JFrame {
         tablaComplejidad.setModel(model);
     }
 
-    private void calcularComplejidadTotal(List<String[]> resultados) {
-        Map<String, Integer> complejidades = new HashMap<>();
-        for (String[] resultado : resultados) {
-            String complejidad = resultado[1];
-            if (complejidad.startsWith("O")) {
-                complejidades.put(complejidad, complejidades.getOrDefault(complejidad, 0) + 1);
-            }
+    private void calcularComplejidadTotal(List<String[]> resultados, String complejidadReferencia) {
+    Map<String, Integer> complejidades = new HashMap<>();
+    for (String[] resultado : resultados) {
+        String complejidad = resultado[1];
+        if (complejidad.startsWith("O")) {
+            complejidades.put(complejidad, complejidades.getOrDefault(complejidad, 0) + 1);
         }
-
-        StringBuilder resultadoFinal = new StringBuilder("Complejidad Total:\n");
-        for (Map.Entry<String, Integer> entry : complejidades.entrySet()) {
-            resultadoFinal.append(entry.getValue()).append("x").append(entry.getKey()).append(" + ");
-        }
-
-        String resultadoSimplificado = simplificarComplejidad(complejidades);
-        JOptionPane.showMessageDialog(this, resultadoFinal.substring(0, resultadoFinal.length() - 3)
-                + "\nSimplificado: " + resultadoSimplificado, "Complejidad Total", JOptionPane.INFORMATION_MESSAGE);
     }
+
+    StringBuilder resultadoFinal = new StringBuilder("Complejidad Total:\n");
+    for (Map.Entry<String, Integer> entry : complejidades.entrySet()) {
+        resultadoFinal.append(entry.getValue()).append("x").append(entry.getKey()).append(" + ");
+    }
+
+    String resultadoSimplificado = simplificarComplejidad(complejidades);
+
+    // Comparar con la referencia
+    boolean excedeReferencia = resultadoSimplificado.compareTo(complejidadReferencia) > 0;
+    String mensajeAdicional = excedeReferencia
+        ? "\nAdvertencia: La complejidad excede la referencia seleccionada."
+        : "\nLa complejidad está dentro de los límites aceptables.";
+
+    JOptionPane.showMessageDialog(this, resultadoFinal.substring(0, resultadoFinal.length() - 3)
+            + "\nSimplificado: " + resultadoSimplificado
+            + mensajeAdicional, "Complejidad Total", JOptionPane.INFORMATION_MESSAGE);
+}
 
     private String simplificarComplejidad(Map<String, Integer> complejidades) {
         if (complejidades.containsKey("O(n^2)")) {

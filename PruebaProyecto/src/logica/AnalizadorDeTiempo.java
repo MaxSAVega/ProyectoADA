@@ -47,10 +47,27 @@ public class AnalizadorDeTiempo {
                (codigoFuente.contains("start = middle + 1") || codigoFuente.contains("end = middle - 1"));
     }
 
-    private boolean esBucleAnidado(String codigoFuente) {
-        int buclesEncontrados = contarOcurrencias(codigoFuente, "for") + contarOcurrencias(codigoFuente, "while");
-        return buclesEncontrados > 1;
+    public boolean esBucleAnidado(String codigoFuente) {
+    // Contar la cantidad de bucles anidados
+    int buclesAnidados = 0;
+    String[] lineas = codigoFuente.split("\n");
+    
+    for (String linea : lineas) {
+        if (linea.contains("for") || linea.contains("while")) {
+            // Si encontramos un bucle, incrementamos el contador
+            buclesAnidados++;
+            // Verificamos si hay otro bucle en la misma línea o en líneas anteriores
+            for (String otraLinea : lineas) {
+                if (!linea.equals(otraLinea) && (otraLinea.contains("for") || otraLinea.contains("while"))) {
+                    // Si hay otro bucle, consideramos que hay anidamiento
+                    return true;
+                }
+            }
+        }
     }
+    return false; // No se encontraron bucles anidados
+}
+
 
     private boolean esBucleSimpleAvanzado(String codigoFuente) {
         String regex = "for\\s*\\(.*;.*;.*\\)|while\\s*\\(.*\\)";

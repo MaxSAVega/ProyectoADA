@@ -89,22 +89,19 @@ public class VentanaPrincipal extends JFrame {
     }
 
     private String determinarComplejidad(String linea) {
-        if (linea.startsWith("let ") || linea.startsWith("var ") || linea.startsWith("const ")) {
-            return "O(1)"; // Declaración de variable
-        } else if (linea.startsWith("if") || linea.startsWith("switch")) {
-            return "O(1)"; // Condicional simple
-        } else if (linea.startsWith("for") || linea.startsWith("while")) {
-            if (linea.contains("for")) {
-                if (linea.contains("nested")) {
-                    return "O(n^2)"; // Ejemplo de bucle anidado
-                }
-                return "O(n)"; // Bucle simple
-            } else if (linea.contains("while")) {
-                return "O(n)"; // Asumiendo una condición lineal
-            }
+    if (linea.startsWith("let ") || linea.startsWith("var ") || linea.startsWith("const ")) {
+        return "O(1)"; // Declaración de variable
+    } else if (linea.startsWith("if") || linea.startsWith("switch")) {
+        return "O(1)"; // Condicional simple
+    } else if (linea.startsWith("for") || linea.startsWith("while")) {
+        if (analizador.esBucleAnidado(codigoFuenteArea.getText())) {
+            return "O(n^2)"; // Bucle anidado
         }
-        return "No determinada"; // No se puede identificar
+        return "O(n)"; // Bucle simple
     }
+    return "No determinada"; // No se puede identificar
+}
+
 
     private void mostrarResultados(List<String[]> resultados) {
         String[] columnas = {"Línea de Código", "Complejidad Estimada"};
